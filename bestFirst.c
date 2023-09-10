@@ -1,21 +1,21 @@
-#include "dijkstra.h"
+#include "bestFirst.h"
 
-struct _dijkstraNode{
+struct _bestFirstNode{
     int coords[2];
-    int value;
+    float value;
     int parent[2];
 };
 
-int getElem(dijkstraNode elem){
+float getElem(bestFirstNode elem){
     return elem->value;
 }
 
-int getElemGen(void* elem){
-    return getElem((dijkstraNode)elem);
+float getElemGen(void* elem){
+    return getElem((bestFirstNode)elem);
 }
 
-dijkstraNode makeDijkstraNode(int* coords, int value, int* parent){
-    dijkstraNode elem = (dijkstraNode)malloc(sizeof(struct _dijkstraNode));
+bestFirstNode makeBestFirstNode(int* coords, float value, int* parent){
+    bestFirstNode elem = (bestFirstNode)malloc(sizeof(struct _bestFirstNode));
     if(elem == NULL){
         perror("could not create dijkstra Node\n");
         return NULL;
@@ -40,7 +40,7 @@ linkedList closest_path(int matrix[][6], hashtable ht,int* key, int* startPos){
     linkedList path = makeLinkedList();
     int* tmp;
     while((key[0] != startPos[0]) || (key[1] != startPos[1])){
-        tmp = ((dijkstraNode)getElem_ht(ht, key))->parent;
+        tmp = ((bestFirstNode)getElem_ht(ht, key))->parent;
         key[0] = tmp[0];
         key[1] = tmp[1];
         matrix[key[0]][key[1]] = 5;
@@ -49,41 +49,23 @@ linkedList closest_path(int matrix[][6], hashtable ht,int* key, int* startPos){
     return path;
 }
 
-int calculateCost(int pos[2],int i,int j,int* costMatrix){
-    if(i == -1 && j == -1) 
-        costMatrix[10 + (pos[0]-1) * 15 + pos[1] - 1]; //LT
-    if(i == -1 && j == 0) 
-        costMatrix[5 + (pos[0]-1) * 15 + pos[1]]; //T
-    if(i == -1 && j == 1) 
-        costMatrix[10 + (pos[0]-1) * 15 + pos[1]]; //RT
-    if(i == 0 && j == -1) 
-        costMatrix[pos[0] * 15] + pos[1] - 1; //L
-    if(i == 0 && j == 0) 
-        return 0; //center
-    if(i == 0 && j == 1) 
-        costMatrix[pos[0] * 15] + pos[1]; //R
-    if(i == 1 && j == -1) 
-        costMatrix[10 + (pos[0]) * 15 + pos[1] - 1]; //BT
-    if(i == 1 && j == 0) 
-        costMatrix[5 + (pos[0]) * 15 + pos[1]]; //T
-    if(i == 1 && j == 1) 
-        costMatrix[10 + pos[0] * 15 + pos[1] + 1]; //RB
+float distance(int pointA[2], int pointB[2]){
+    return sqrt((((float)pointA[0] + (float)pointB[0])*((float)pointA[0] + (float)pointB[0])) + (((float)pointA[1] + (float)pointB[1]) * ((float)pointA[1] + (float)pointB[1])));
 }
 
-linkedList dijkstra(int startPos[2], int finishPos[2], int matrix[][6], int* costMatrix){
+linkedList bestFirst(int startPos[2], int finishPos[2], int matrix[][6]){
     hashtable table = makeHashtable();
-    dijkstraNode elem = makeDijkstraNode(startPos, 0, startPos);
-    printf("created a Node: {%d, %d}, %d\n", elem->coords[0], elem->coords[1], elem->value);
+    bestFirstNode elem = makeBestFirstNode(startPos, 0, startPos);
+    printf("created a Node: {%d, %d}, %f\n", elem->coords[0], elem->coords[1], elem->value);
     insert_ht(table, elem->coords, elem);
     binaryTree tree = makeBinaryTree(elem);
 
     int* pos;
-    dijkstraNode currentNode;
-    dijkstraNode oldNode;
-    int count = 0;
+    bestFirstNode currentNode;
+    bestFirstNode oldNode;
     while(tree != NULL){
-        currentNode = (dijkstraNode)getElem_bt(removeMinNode(&tree));
-        printf("Removed a Node: {%d, %d}, %d\n", currentNode->coords[0], currentNode->coords[1], currentNode->value);
+        currentNode = (bestFirstNode)getElem_bt(removeMinNode(&tree));
+        printf("Removed a Node: {%d, %d}, %f\n", currentNode->coords[0], currentNode->coords[1], currentNode->value);
         if((currentNode->coords[0] == finishPos[0]) && (currentNode->coords[1] == finishPos[1])){
             linkedList path = closest_path(matrix, table, currentNode->coords, startPos);
             matrix[startPos[0]][startPos[1]] = 2;
@@ -92,7 +74,7 @@ linkedList dijkstra(int startPos[2], int finishPos[2], int matrix[][6], int* cos
         }
         matrix[(currentNode->coords)[0]][(currentNode->coords)[1]] = 4; 
         pos = currentNode->coords;
-        oldNode = (dijkstraNode)getElem_ht(table, pos);
+        oldNode = (bestFirstNode)getElem_ht(table, pos);
         if(oldNode != NULL){
             if(oldNode->value < currentNode->value)
                 continue;
@@ -102,28 +84,26 @@ linkedList dijkstra(int startPos[2], int finishPos[2], int matrix[][6], int* cos
                 int chekingPos[2] = {pos[0] + i, pos[1] + j};
                 int typePos = checkPos(chekingPos, matrix);
                 if((typePos != 0) && (typePos != 3)){continue;}        
-                oldNode = (dijkstraNode)getElem_ht(table, chekingPos);
+                oldNode = (bestFirstNode)getElem_ht(table, chekingPos);
                 if(oldNode != NULL){
                     if(oldNode->value > currentNode->value + 1){
                         oldNode->value = currentNode->value + 1;
                         oldNode->parent[0] = currentNode->coords[0];
                         oldNode->parent[1] = currentNode->coords[1];
                         tree = insert_bt(tree, oldNode, getElemGen);
-                        printf("changed a Node: {%d, %d}, %d\n", oldNode->coords[0], oldNode->coords[1], oldNode->value);
+                        printf("changed a Node: {%d, %d}, %f\n", oldNode->coords[0], oldNode->coords[1], oldNode->value);
                     }
                     continue;
                 }
-                int cost = currentNode->value + calculateCost(pos, i, j);
-                dijkstraNode newNode = makeDijkstraNode(chekingPos, cost, currentNode->coords);
-                ++count;
-                printf("created a Node: {%d, %d}, %d\n", newNode->coords[0], newNode->coords[1], newNode->value);
+                float cost = currentNode->value + distance(chekingPos, finishPos);
+                bestFirstNode newNode = makeBestFirstNode(chekingPos, cost, currentNode->coords);
+                printf("created a Node: {%d, %d}, %f\n", newNode->coords[0], newNode->coords[1], newNode->value);
                 insert_ht(table, newNode->coords, newNode);
                 tree = insert_bt(tree, newNode, getElemGen);
                 continue;
             }
         }
     }
-    //freeHashtable(table);
     freeTree(tree);
     matrix[startPos[0]][startPos[1]] = 2;
     matrix[finishPos[0]][finishPos[1]] = 3;

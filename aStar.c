@@ -14,7 +14,7 @@ int getElemGen(void* elem){
     return getElem((aStarNode)elem);
 }
 
-aStarNode makeDijkstraNode(int* coords, float value, int* parent){
+aStarNode makeAstarNode(int* coords, float value, int* parent){
     aStarNode elem = (aStarNode)malloc(sizeof(struct _aStarNode));
     if(elem == NULL){
         perror("could not create dijkstra Node\n");
@@ -53,9 +53,9 @@ float distance(int pointA[2], int pointB[2]){
     return sqrt((((float)pointA[0] + (float)pointB[0])*((float)pointA[0] + (float)pointB[0])) + (((float)pointA[1] + (float)pointB[1]) * ((float)pointA[1] + (float)pointB[1])));
 }
 
-linkedList dijkstra(int startPos[2], int finishPos[2], int matrix[][6], int* costMatrix){
+linkedList aStar(int startPos[2], int finishPos[2], int matrix[][6], int* costMatrix){
     hashtable table = makeHashtable();
-    aStarNode elem = makeDijkstraNode(startPos, 0, startPos);
+    aStarNode elem = makeAstarNode(startPos, 0, startPos);
     printf("created a Node: {%d, %d}, %f\n", elem->coords[0], elem->coords[1], elem->value);
     insert_ht(table, elem->coords, elem);
     binaryTree tree = makeBinaryTree(elem);
@@ -97,7 +97,7 @@ linkedList dijkstra(int startPos[2], int finishPos[2], int matrix[][6], int* cos
                     continue;
                 }
                 float cost = currentNode->value + costMatrix[count] + distance(currentNode->coords, finishPos);
-                aStarNode newNode = makeDijkstraNode(chekingPos, cost, currentNode->coords);
+                aStarNode newNode = makeAstarNode(chekingPos, cost, currentNode->coords);
                 ++count;
                 printf("created a Node: {%d, %d}, %f\n", newNode->coords[0], newNode->coords[1], newNode->value);
                 insert_ht(table, newNode->coords, newNode);
